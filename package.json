@@ -1,16 +1,16 @@
 {
   "private": true,
-  "displayName": "Plugin Name",
-  "name": "homebridge-plugin-name",
-  "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
+  "displayName": "Homebridge Tuya Smart Home",
+  "name": "homebridge-tuya-smarthome",
+  "version": "0.0.1",
+  "description": "Homebridge custom plugin for controlling Powered by Tuya (PBT) devices in HomeKit, it's based on Tuya Open API.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "git://github.com/lodev09/homebridge-tuya-smarthome.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/lodev09/homebridge-tuya-smarthome/issues"
   },
   "engines": {
     "node": ">=10.17.0",
@@ -24,9 +24,11 @@
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "tuya",
+    "tuya-api",
+    "smarthome"
   ],
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
