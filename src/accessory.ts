@@ -99,7 +99,7 @@ export class Accessory {
    * Set code value
    * Note: this will store RAW value
    */
-  async setCodeValue(codes: string[], rawValue = null, runCommand = true) {
+  async setCodeValue(codes: string[], rawValue, runCommand = true) {
     // Check if code is supported
     const func = this.getFunctionByCodes(codes);
     if (func) {
