@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { Service, PlatformAccessory } from 'homebridge';
 
 import { Platform } from './platform';
 
@@ -96,13 +96,13 @@ export class Accessory {
    * Set code value
    * Note: this will store RAW value
    */
-  async setCodeValue(codes: string[], rawValue: any, runCommand: boolean = true) {
+  async setCodeValue(codes: string[], rawValue: any, runCommand = true) {
     // Check if code is supported
     const func = this.getFunctionByCodes(codes);
     if (func) {
 
       if (runCommand === true) {
-        let commands = [
+        const commands = [
           {
             code: func.code,
             value: rawValue

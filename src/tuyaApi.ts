@@ -79,7 +79,7 @@ export class TuyaApi {
         return;
       }
 
-      return response.data.result;;
+      return response.data.result;
     }
   }
 
@@ -97,12 +97,12 @@ export class TuyaApi {
   }
 
   async getDeviceFunctions(deviceID) {
-    let result = await this.get(`/v1.0/devices/${deviceID}/functions`);
+    const result = await this.get(`/v1.0/devices/${deviceID}/functions`);
     return result.functions || [];
   }
 
   async runCommand(deviceID, params) {
-    let result = await this.post(`/v1.0/devices/${deviceID}/commands`, params);
+    const result = await this.post(`/v1.0/devices/${deviceID}/commands`, params);
     return result;
   }
 }

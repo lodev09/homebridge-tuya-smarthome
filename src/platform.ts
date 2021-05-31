@@ -73,12 +73,13 @@ export class Platform implements DynamicPlatformPlugin {
     switch (device.category) {
       case 'dj':
       case 'dd':
-      case 'fwd':
+      case 'fwd': {
 
         const lightAccessory = new LightAccessory(this, accessory);
         await lightAccessory.init();
 
         break;
+      }
     }
   }
 }
