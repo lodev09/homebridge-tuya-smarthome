@@ -125,11 +125,7 @@ export class LightAccessory extends Accessory {
     // just set state
     // let Hue run the command
 
-    const codeValues = {};
-    codeValues['work_mode'] = 'colour';
-    codeValues[code] = rawValue;
-
-    await this.setValues(codeValues, false);
+    await this.setValues({ work_mode: 'colour', [code]: rawValue }, false);
   }
 
   async getSaturation(): Promise<CharacteristicValue> {
