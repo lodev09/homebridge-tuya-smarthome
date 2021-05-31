@@ -18,7 +18,7 @@ export class Platform implements DynamicPlatformPlugin {
     this.tuyaApi = new TuyaApi(this);
 
     this.api.on('didFinishLaunching', () => {
-      this.discoverDevices()
+      this.discoverDevices();
     });
   }
 

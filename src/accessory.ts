@@ -5,7 +5,7 @@ import { Platform } from './platform';
 export class Accessory {
 
   protected service: Service;
-  protected state: Map<any, any>;
+  protected state;
 
   constructor(protected readonly platform: Platform, protected readonly accessory: PlatformAccessory, service) {
     const device = accessory.context.device;
@@ -25,7 +25,10 @@ export class Accessory {
   }
 
   async initFunctions() {
-    if (this.accessory.context.functions) return;
+    if (this.accessory.context.functions) {
+      return;
+    }
+
     this.accessory.context.functions = await this.platform.tuyaApi.getDeviceFunctions(this.accessory.context.device.id);
   }
 
@@ -86,7 +89,7 @@ export class Accessory {
         rawValue = value;
       }
 
-      this.state.set(code, rawValue)
+      this.state.set(code, rawValue);
     }
 
     return this.state.get(code);
@@ -96,7 +99,7 @@ export class Accessory {
    * Set code value
    * Note: this will store RAW value
    */
-  async setCodeValue(codes: string[], rawValue: any, runCommand = true) {
+  async setCodeValue(codes: string[], rawValue = null, runCommand = true) {
     // Check if code is supported
     const func = this.getFunctionByCodes(codes);
     if (func) {
@@ -105,16 +108,16 @@ export class Accessory {
         const commands = [
           {
             code: func.code,
-            value: rawValue
-          }
+            value: rawValue,
+          },
         ];
 
         await this.platform.tuyaApi.runCommand(this.accessory.context.device.id, {
-          commands: commands
+          commands: commands,
         });
       }
 
-      this.state.set(func.code, rawValue)
+      this.state.set(func.code, rawValue);
     }
   }
 }

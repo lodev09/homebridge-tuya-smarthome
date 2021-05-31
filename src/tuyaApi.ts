@@ -9,22 +9,29 @@ export class TuyaApi {
     access_token: '',
     refresh_token: '',
     uid: '',
-    expire: 0
+    expire: 0,
   };
 
   constructor(private readonly platform: Platform) { }
 
   async setTokenInfo(path) {
-    if (path.startsWith('/v1.0/iot-01/associated-users/actions/authorized-login')) return;
-    if (this.tokenInfo.expire - 60 * 1000 > new Date().getTime()) return;
+    const authPath = '/v1.0/iot-01/associated-users/actions/authorized-login';
+
+    if (path.startsWith(authPath)) {
+      return;
+    }
+
+    if (this.tokenInfo.expire - 60 * 1000 > new Date().getTime()) {
+      return;
+    }
 
     const options = this.platform.config.options;
 
-    const result = await this.post(`/v1.0/iot-01/associated-users/actions/authorized-login`, {
+    const result = await this.post(authPath, {
       'country_code' : options.countryCode,
       'username': options.username,
       'password': Crypto.MD5(options.password).toString(),
-      'schema' : options.schema
+      'schema' : options.schema,
     });
 
     this.tokenInfo = {
@@ -61,7 +68,7 @@ export class TuyaApi {
       'lang': LANG,
       'dev_lang': 'javascript',
       'dev_channel': 'homebridge',
-      'devVersion': '1.0.6'
+      'devVersion': '1.0.6',
     };
 
     const response = await axios({
@@ -92,17 +99,17 @@ export class TuyaApi {
   }
 
   async getDevices() {
-    const result = await this.get(`/v1.0/iot-01/associated-users/devices`);
+    const result = await this.get('/v1.0/iot-01/associated-users/devices');
     return result.devices || [];
   }
 
   async getDeviceFunctions(deviceID) {
-    const result = await this.get(`/v1.0/devices/${deviceID}/functions`);
+    const result = await this.get('/v1.0/devices/' + deviceID + '/functions');
     return result.functions || [];
   }
 
   async runCommand(deviceID, params) {
-    const result = await this.post(`/v1.0/devices/${deviceID}/commands`, params);
+    const result = await this.post('/v1.0/devices/' + deviceID + '/commands', params);
     return result;
   }
 }
