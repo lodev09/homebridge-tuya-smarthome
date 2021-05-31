@@ -157,11 +157,12 @@ export class LightAccessory extends Accessory {
 
     // Check if white
     if (rawValue.h < 10 && rawValue.s < 10) {
+      const brightValues = this.getFunctionValues('bright_value, bright_value_v2');
       const tempValues = this.getFunctionValues('temp_value, temp_value_v2');
 
       await this.setValues({
         'work_mode': 'white',
-        'bright_value, bright_value_v2': rawValue.v,
+        'bright_value, bright_value_v2': brightValues.max,
         'temp_value, temp_value_v2': tempValues.max,
       });
 
