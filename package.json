@@ -21,6 +21,7 @@
     "lint": "eslint src/**.ts --max-warnings=0",
     "watch": "npm run build && npm link && nodemon",
     "build": "rimraf ./dist && tsc",
+    "hb": "homebridge -I -D",
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
@@ -39,5 +40,9 @@
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.2"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "crypto-js": "^4.0.0"
   }
 }

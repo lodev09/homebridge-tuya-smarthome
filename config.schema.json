@@ -18,6 +18,12 @@
             "type": "string",
             "required": true
           },
+          "countryCode": {
+            "title": "Country Code",
+            "type": "integer",
+            "required": true,
+            "placeholder": "1"
+          },
           "clientId": {
             "title": "Project Access ID/Client ID",
             "type": "string",
@@ -28,7 +34,7 @@
             "type": "string",
             "required": true
           },
-          "zone": {
+          "baseUrl": {
             "title": "Zone",
             "type": "string",
             "required": true,

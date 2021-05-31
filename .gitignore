@@ -1,3 +1,5 @@
+*.template
+
 # Ignore compiled code
 dist
 
