@@ -177,7 +177,7 @@ export class LightAccessory extends Accessory {
 
     // Convert to raw
     const values = this.getFunctionValuesByCodes(codes);
-    const rawValue = values.max - (Math.min((value / 500) * values.max, values.max));
+    const rawValue = values.max - (Math.min((value / 360) * values.max, values.max));
 
     this.platform.log.debug('Set Temp ' + value);
 
@@ -194,7 +194,7 @@ export class LightAccessory extends Accessory {
 
     // min: 140
     // max: 500
-    const value = Math.floor(Math.max(Math.min(500 - ((rawValue / values.max) * 500), 500), 140));
+    const value = Math.floor(Math.max(Math.min(360 - ((rawValue / values.max) * 360), 360), 140));
     this.platform.log.debug(this.accessory.context.device.id + ' T: ' + value + ' (' + rawValue + ')');
 
     return value;
