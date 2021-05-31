@@ -56,7 +56,7 @@ export class TuyaApi {
     await this.setTokenInfo(path);
 
     this.platform.log.info(method.toUpperCase() + ': ' + path);
-    this.platform.log.info('PARAMS:', JSON.stringify(body, null, 2));
+    this.platform.log.info('PARAMS:', JSON.stringify(body));
 
     const options = this.platform.config.options;
     const headers = {
