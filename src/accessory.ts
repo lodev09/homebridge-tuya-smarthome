@@ -98,7 +98,7 @@ export class Accessory {
   }
 
   async setValues(codeValues, runCommand = true) {
-    const commands = [];
+    const commands: object[] = [];
 
     for (const code in codeValues) {
       const rawValue = codeValues[code];

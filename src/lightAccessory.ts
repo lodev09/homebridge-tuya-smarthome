@@ -14,35 +14,35 @@ export class LightAccessory extends Accessory {
 
     this.initCharacteristic(
       this.platform.Characteristic.On,
-      ['switch_led'],
+      'switch_led',
       this.setOn.bind(this),
       this.getOn.bind(this),
     );
 
     this.initCharacteristic(
       this.platform.Characteristic.Brightness,
-      ['bright_value', 'bright_value_v2'],
+      'bright_value, bright_value_v2',
       this.setBrightness.bind(this),
       this.getBrightness.bind(this),
     );
 
     this.initCharacteristic(
       this.platform.Characteristic.ColorTemperature,
-      ['temp_value', 'temp_value_v2'],
+      'temp_value, temp_value_v2',
       this.setColorTemperature.bind(this),
       this.getColorTemperature.bind(this),
     );
 
     this.initCharacteristic(
       this.platform.Characteristic.Hue,
-      ['colour_data', 'colour_data_v2'],
+      'colour_data, colour_data_v2',
       this.setHue.bind(this),
       this.getHue.bind(this),
     );
 
     this.initCharacteristic(
       this.platform.Characteristic.Saturation,
-      ['colour_data', 'colour_data_v2'],
+      'colour_data, colour_data_v2',
       this.setSaturation.bind(this),
       this.getSaturation.bind(this),
     );
@@ -126,7 +126,7 @@ export class LightAccessory extends Accessory {
     // let Hue run the command
 
     const codeValues = {};
-    codeValues.work_mode = 'colour';
+    codeValues['work_mode'] = 'colour';
     codeValues[code] = rawValue;
 
     await this.setValues(codeValues, false);
