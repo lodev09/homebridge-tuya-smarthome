@@ -108,8 +108,8 @@ export class TuyaApi {
     return result.functions || [];
   }
 
-  async runCommand(deviceID, params) {
-    const result = await this.post('/v1.0/devices/' + deviceID + '/commands', params);
+  async runCommand(deviceID, commands) {
+    const result = await this.post('/v1.0/devices/' + deviceID + '/commands', { commands: commands });
     return result;
   }
 }

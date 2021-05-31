@@ -32,7 +32,8 @@ export class Accessory {
     this.accessory.context.functions = await this.platform.tuyaApi.getDeviceFunctions(this.accessory.context.device.id);
   }
 
-  getFunctionByCodes(codes: string[]) {
+  getFunction(code: string) {
+    const codes = code.split(',').map(c => c.trim());
     const functions = this.accessory.context.functions || [];
 
     // Check if characteristic is supported
@@ -43,14 +44,14 @@ export class Accessory {
     }
   }
 
-  getFunctionValuesByCodes(codes: string[]) {
-    const func = this.getFunctionByCodes(codes);
+  getFunctionValues(code: string) {
+    const func = this.getFunction(code);
     return JSON.parse(func.values);
   }
 
-  initCharacteristic(characteristic, codes: string[], set, get) {
+  initCharacteristic(characteristic, code: string, set, get) {
     // Check if characteristic is supported
-    if (this.getFunctionByCodes(codes)) {
+    if (this.getFunction(code)) {
       return this.service.getCharacteristic(characteristic)
         .onSet(set)
         .onGet(get);
@@ -61,63 +62,72 @@ export class Accessory {
    * Get code value
    * Note: this will store RAW value
    */
-  getCodeValue(codes: string[]) {
-    let code;
-    let value;
+  getCodeValue(code: string) {
+    let statusCode;
+    let statusValue;
 
+    const codes = code.split(',').map(c => c.trim());
     const status = this.accessory.context.device.status || [];
 
     for (const s of status) {
       if (codes.includes(s.code)) {
-        code = s.code;
-        value = s.value;
+        statusCode = s.code;
+        statusValue = s.value;
         break;
       }
     }
 
-    if (this.state.has(code) === false) {
+    if (this.state.has(statusCode) === false) {
       // Initialize state from status
 
       let rawValue;
-      if (typeof value === 'string') {
+      if (typeof statusValue === 'string') {
         try {
-          rawValue = JSON.parse(value);
+          rawValue = JSON.parse(statusValue);
         } catch (e) {
-          rawValue = value;
+          rawValue = statusValue;
         }
       } else {
-        rawValue = value;
+        rawValue = statusValue;
       }
 
-      this.state.set(code, rawValue);
+      this.state.set(statusCode, rawValue);
     }
 
-    return this.state.get(code);
+    return this.state.get(statusCode);
+  }
+
+  async setValues(codeValues, runCommand = true) {
+    const commands = [];
+
+    for (const code in codeValues) {
+      const rawValue = codeValues[code];
+
+      // Check if code is supported
+      const func = this.getFunction(code);
+      if (func) {
+        commands.push({
+          code: func.code,
+          value: rawValue,
+        });
+
+        this.state.set(func.code, rawValue);
+      }
+    }
+
+    if (commands.length > 0 && runCommand === true) {
+      await this.platform.tuyaApi.runCommand(this.accessory.context.device.id, commands);
+    }
   }
 
   /**
    * Set code value
    * Note: this will store RAW value
    */
-  async setCodeValue(codes: string[], rawValue, runCommand = true) {
-    // Check if code is supported
-    const func = this.getFunctionByCodes(codes);
-    if (func) {
+  async setValue(code: string, rawValue, runCommand = true) {
+    const codeValues = {};
+    codeValues[code] = rawValue;
 
-      if (runCommand === true) {
-        const commands = [
-          {
-            code: func.code,
-            value: rawValue,
-          },
-        ];
-
-        await this.platform.tuyaApi.runCommand(this.accessory.context.device.id, {
-          commands: commands,
-        });
-      }
-
-      this.state.set(func.code, rawValue);
-    }
+    this.setValues(codeValues, runCommand);
   }
 }

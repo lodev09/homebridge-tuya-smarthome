@@ -49,54 +49,54 @@ export class LightAccessory extends Accessory {
   }
 
   async setBrightness(value: CharacteristicValue) {
-    let codes;
+    let code;
     let rawValue;
 
     value = value as number;
 
-    const workMode = this.getCodeValue(['work_mode']);
+    const workMode = this.getCodeValue('work_mode');
     if (workMode === 'white') {
-      codes = ['bright_value', 'bright_value_v2'];
+      code = 'bright_value, bright_value_v2';
 
       // Convert to raw
-      const values = this.getFunctionValuesByCodes(codes);
+      const values = this.getFunctionValues(code);
       rawValue = Math.max(Math.min((value / 100) * values.max, values.max), values.min);
 
     } else {
-      codes = ['colour_data', 'colour_data_v2'];
+      code = 'colour_data, colour_data_v2';
 
       // Convert to raw
-      const func = this.getFunctionByCodes(codes);
+      const func = this.getFunction(code);
       const max = func.code === 'colour_data' ? 255 : 1000;
       const v = Math.min((value / 100) * max, max);
 
-      rawValue = this.getCodeValue(codes);
+      rawValue = this.getCodeValue(code);
       rawValue.v = v;
     }
 
     this.platform.log.debug('Set Brightness ' + value);
-    await this.setCodeValue(codes, rawValue);
+    await this.setValue(code, rawValue);
   }
 
   async getBrightness(): Promise<CharacteristicValue> {
     let value;
 
-    const workMode = this.getCodeValue(['work_mode']);
+    const workMode = this.getCodeValue('work_mode');
     if (workMode === 'white') {
-      const codes = ['bright_value', 'bright_value_v2'];
-      const rawValue = this.getCodeValue(codes) as number;
+      const code = 'bright_value, bright_value_v2';
+      const rawValue = this.getCodeValue(code) as number;
 
       // Convert to percent
-      const values = this.getFunctionValuesByCodes(codes);
+      const values = this.getFunctionValues(code);
       value = Math.min((rawValue / values.max) * 100, 100);
 
       this.platform.log.debug(this.accessory.context.device.id + ' B: ' + value + ' (' + rawValue + ')');
 
     } else {
-      const codes = ['colour_data', 'colour_data_v2'];
-      const rawValue = this.getCodeValue(codes);
+      const code = 'colour_data, colour_data_v2';
+      const rawValue = this.getCodeValue(code);
 
-      const func = this.getFunctionByCodes(codes);
+      const func = this.getFunction(code);
       const max = func.code === 'colour_data' ? 255 : 1000;
 
       // max: 100%
@@ -109,31 +109,35 @@ export class LightAccessory extends Accessory {
   }
 
   async setSaturation(value: CharacteristicValue) {
-    const codes = ['colour_data', 'colour_data_v2'];
+    const code = 'colour_data, colour_data_v2';
     value = value as number;
 
     // Convert to raw
-    const func = this.getFunctionByCodes(codes);
+    const func = this.getFunction(code);
     const max = func.code === 'colour_data' ? 255 : 1000;
     const s = Math.min((value / 100) * max, max);
 
-    const rawValue = this.getCodeValue(codes);
+    const rawValue = this.getCodeValue(code);
     rawValue.s = s;
 
     this.platform.log.debug('Set Saturation ' + value);
 
     // just set state
     // let Hue run the command
-    await this.setCodeValue(['work_mode'], 'colour', false);
-    await this.setCodeValue(codes, rawValue, false);
+
+    const codeValues = {};
+    codeValues.work_mode = 'colour';
+    codeValues[code] = rawValue;
+
+    await this.setValues(codeValues, false);
   }
 
   async getSaturation(): Promise<CharacteristicValue> {
-    const codes = ['colour_data', 'colour_data_v2'];
+    const code = 'colour_data, colour_data_v2';
 
-    const rawValue = this.getCodeValue(codes);
+    const rawValue = this.getCodeValue(code);
 
-    const func = this.getFunctionByCodes(codes);
+    const func = this.getFunction(code);
     const max = func.code === 'colour_data' ? 255 : 1000;
 
     // max: 100%
@@ -144,25 +148,35 @@ export class LightAccessory extends Accessory {
   }
 
   async setHue(value: CharacteristicValue) {
-    const codes = ['colour_data', 'colour_data_v2'];
+    const code = 'colour_data, colour_data_v2';
     value = value as number;
 
     // Convert to raw
     const h = Math.min((value / 360) * 360, 360);
 
-    const rawValue = this.getCodeValue(codes);
+    const rawValue = this.getCodeValue(code);
     rawValue.h = h;
 
     this.platform.log.debug('Set Hue ' + value);
 
-    await this.setCodeValue(['work_mode'], 'colour', false);
-    await this.setCodeValue(codes, rawValue);
+    // Check if white
+    if (rawValue.h < 10 && rawValue.s < 10) {
+      const tempValues = this.getFunctionValues('temp_value, temp_value_v2');
+
+      await this.setValues({
+        'work_mode': 'white',
+        'bright_value, bright_value_v2': rawValue.v,
+        'temp_value, temp_value_v2': tempValues.max,
+      });
+
+    } else {
+      await this.setValue('work_mode', 'colour', false);
+      await this.setValue(code, rawValue);
+    }
   }
 
   async getHue(): Promise<CharacteristicValue> {
-    const codes = ['colour_data', 'colour_data_v2'];
-
-    const rawValue = this.getCodeValue(codes);
+    const rawValue = this.getCodeValue('colour_data, colour_data_v2');
 
     // max: 360
     const value = Math.min((rawValue.h / 360) * 360, 360);
@@ -173,27 +187,36 @@ export class LightAccessory extends Accessory {
 
   async setColorTemperature(value: CharacteristicValue) {
     value = value as number;
-    const codes = ['temp_value', 'temp_value_v2'];
+    const code = 'temp_value, temp_value_v2';
 
+    //
     // Convert to raw
-    const values = this.getFunctionValuesByCodes(codes);
+    //
+    // Note:
+    // homekit value is opposite to tuya's value
+    //
+
+    const values = this.getFunctionValues(code);
     const rawValue = Math.floor(values.max - (Math.min(((value - 140) / 360) * values.max, values.max)));
 
     this.platform.log.debug('Set Temp ' + value);
 
     // Switch to workmode white
-    // await this.setCodeValue(['work_mode'], 'white');
-    await this.setCodeValue(codes, rawValue);
+    // await this.setValue(['work_mode'], 'white');
+    await this.setValue(code, rawValue);
   }
 
   async getColorTemperature(): Promise<CharacteristicValue> {
-    const codes = ['temp_value', 'temp_value_v2'];
-    const rawValue = this.getCodeValue(codes) as number;
+    const code = 'temp_value, temp_value_v2';
+    const rawValue = this.getCodeValue(code) as number;
 
-    const values = this.getFunctionValuesByCodes(codes);
+    const values = this.getFunctionValues(code);
 
-    // min: 140
-    // max: 500
+    //
+    // Note:
+    // homekit value is opposite to tuya's value
+    //
+
     const value = Math.floor(Math.max(Math.min(500 - ((rawValue / values.max) * 360), 500), 140));
     this.platform.log.debug(this.accessory.context.device.id + ' T: ' + value + ' (' + rawValue + ')');
 
@@ -203,11 +226,11 @@ export class LightAccessory extends Accessory {
   async setOn(value: CharacteristicValue) {
     const rawValue = value as boolean;
 
-    await this.setCodeValue(['switch_led'], rawValue);
+    await this.setValue('switch_led', rawValue);
   }
 
   async getOn(): Promise<CharacteristicValue> {
-    const value = this.getCodeValue(['switch_led']) as boolean;
+    const value = this.getCodeValue('switch_led') as boolean;
     return value;
   }
 }
