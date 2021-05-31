@@ -167,8 +167,7 @@ export class LightAccessory extends Accessory {
       });
 
     } else {
-      await this.setValue('work_mode', 'colour', false);
-      await this.setValue(code, rawValue);
+      await this.setValues({ work_mode: 'colour', [code]: rawValue });
     }
   }
 
@@ -199,8 +198,7 @@ export class LightAccessory extends Accessory {
     this.platform.log.debug('Set Temp ' + value);
 
     // Switch to workmode white
-    // await this.setValue(['work_mode'], 'white');
-    await this.setValue(code, rawValue);
+    await this.setValues({ work_mode: 'white', [code]: rawValue });
   }
 
   async getColorTemperature(): Promise<CharacteristicValue> {
@@ -223,7 +221,7 @@ export class LightAccessory extends Accessory {
   async setOn(value: CharacteristicValue) {
     const rawValue = value as boolean;
 
-    await this.setValue('switch_led', rawValue);
+    await this.setValues({ switch_led: rawValue });
   }
 
   async getOn(): Promise<CharacteristicValue> {
