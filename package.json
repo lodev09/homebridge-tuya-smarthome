@@ -1,6 +1,5 @@
 {
-  "private": true,
-  "displayName": "Homebridge Tuya Smart Home",
+  "displayName": "Homebridge Tuya SmartHome",
   "name": "homebridge-tuya-smarthome",
   "version": "0.0.1",
   "description": "Homebridge custom plugin for controlling Powered by Tuya (PBT) devices in HomeKit, it's based on Tuya Open API.",
