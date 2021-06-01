@@ -12,6 +12,9 @@ export class TuyaApi {
     expire: 0,
   };
 
+  private requestHash = '';
+  private requestResult;
+
   constructor(private readonly platform: Platform) { }
 
   async setTokenInfo(path) {
@@ -57,39 +60,60 @@ export class TuyaApi {
   async request(method, path, params = null, body = null) {
     await this.setTokenInfo(path);
 
-    this.platform.log.info(method.toUpperCase() + ': ' + path);
-    this.platform.log.info('PARAMS:', JSON.stringify(body));
+    const jsonBody = JSON.stringify(body);
+    const jsonParams = JSON.stringify(params);
 
-    const options = this.platform.config.options;
-    const headers = {
-      't': new Date().getTime(),
-      'client_id': options.clientId,
-      'sign': this.getSignature(),
-      'sign_method': 'HMAC-SHA256',
-      'access_token': this.tokenInfo.access_token,
-      'lang': LANG,
-      'dev_lang': 'javascript',
-      'dev_channel': 'homebridge',
-      'devVersion': '1.0.6',
-    };
+    const requestHash = Crypto.SHA1(path + jsonParams + jsonBody).toString();
 
-    const response = await axios({
-      baseURL: options.baseUrl,
-      url: path,
-      method: method,
-      headers: headers,
-      params: params,
-      data: body,
-    });
+    // Avoid duplicate call
+    if (this.requestHash !== requestHash) {
 
-    if (response.data) {
-      if (response.data.success !== true) {
-        this.platform.log.error('ERR ' + response.data.code + ': ' + response.data.msg);
-        return;
+      // Store current request hash
+      this.requestHash = requestHash;
+
+      this.platform.log.info(method.toUpperCase() + ': ' + path);
+      if (body) {
+        this.platform.log.info('BODY:', jsonBody);
       }
 
-      return response.data.result;
+      if (params) {
+        this.platform.log.info('PARAMS:', jsonParams);
+      }
+
+      const options = this.platform.config.options;
+      const headers = {
+        't': new Date().getTime(),
+        'client_id': options.clientId,
+        'sign': this.getSignature(),
+        'sign_method': 'HMAC-SHA256',
+        'access_token': this.tokenInfo.access_token,
+        'lang': LANG,
+        'dev_lang': 'javascript',
+        'dev_channel': 'homebridge',
+        'devVersion': '1.0.6',
+      };
+
+      const response = await axios({
+        baseURL: options.baseUrl,
+        url: path,
+        method: method,
+        headers: headers,
+        params: params,
+        data: body,
+      });
+
+      if (response.data) {
+        if (response.data.success !== true) {
+          this.platform.log.error('ERR ' + response.data.code + ': ' + response.data.msg);
+          return;
+        }
+
+        // Store request if only successful
+        this.requestResult = response.data.result;
+      }
     }
+
+    return this.requestResult;
   }
 
   async get(path, params = null) {

@@ -91,7 +91,7 @@ export class LightDevice extends Device {
       const values = this.getFunctionValues(code);
       value = Math.min((rawValue / values.max) * 100, 100);
 
-      this.platform.log.debug(this.accessory.context.device.id + ' B: ' + value + ' (' + rawValue + ')');
+      this.log('Get Brightness: ' + value + ' (' + rawValue + ')');
 
     } else {
       const code = 'colour_data, colour_data_v2';
@@ -103,7 +103,7 @@ export class LightDevice extends Device {
       // max: 100%
       value = Math.min((rawValue.v / max) * 100, 100);
 
-      this.platform.log.debug(this.accessory.context.device.id + ' V: ' + value + ' (' + rawValue.v + ')');
+      this.log('Get Brightness (V): ' + value + ' (' + rawValue.v + ')');
     }
 
     return value;
@@ -111,7 +111,7 @@ export class LightDevice extends Device {
 
   async setColourData(rawValue) {
     // Check if white
-    if (rawValue.h < 10 && rawValue.s < 10) {
+    if (rawValue.s < 10) {
       const brightValues = this.getFunctionValues('bright_value, bright_value_v2');
       const tempValues = this.getFunctionValues('temp_value, temp_value_v2');
 
@@ -153,7 +153,7 @@ export class LightDevice extends Device {
 
     // max: 100%
     const value = Math.min((rawValue.s / max) * 100, 100);
-    this.platform.log.debug(this.accessory.context.device.id + ' S: ' + value + ' (' + rawValue.s + ')');
+    this.log('Get Saturation: ' + value + ' (' + rawValue.s + ')');
 
     return value;
   }
@@ -177,7 +177,7 @@ export class LightDevice extends Device {
 
     // max: 360
     const value = Math.min((rawValue.h / 360) * 360, 360);
-    this.platform.log.debug(this.accessory.context.device.id + ' H: ' + value + ' (' + rawValue.h + ')');
+    this.log('Get Hue: ' + value + ' (' + rawValue.h + ')');
 
     return value;
   }
@@ -214,7 +214,7 @@ export class LightDevice extends Device {
     //
 
     const value = Math.floor(Math.max(Math.min(500 - ((rawValue / values.max) * 360), 500), 140));
-    this.platform.log.debug(this.accessory.context.device.id + ' T: ' + value + ' (' + rawValue + ')');
+    this.log('Get Temp: ' + value + ' (' + rawValue + ')');
 
     return value;
   }

@@ -29,7 +29,8 @@ export class Device {
   }
 
   log(message: string) {
-    this.platform.log.info('[' + this.getName() + ']', message);
+    const name = '[' + this.getName() + ']';
+    this.platform.log.debug(name, message);
   }
 
   async initFunctions() {
