@@ -102,12 +102,12 @@ export class TuyaApi {
 
   async getDevices() {
     const result = await this.get('/v1.0/iot-01/associated-users/devices');
-    return result.devices || [];
+    return result ? result.devices : [];
   }
 
   async getDeviceFunctions(deviceID) {
     const result = await this.get('/v1.0/devices/' + deviceID + '/functions');
-    return result.functions || [];
+    return result ? result.functions : [];
   }
 
   async runCommand(deviceID, commands) {
