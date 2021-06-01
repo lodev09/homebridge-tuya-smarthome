@@ -74,7 +74,8 @@ export class LightAccessory extends Accessory {
       rawValue.v = v;
     }
 
-    this.platform.log.debug('Set Brightness ' + value);
+    this.log('Set Brightness ' + value);
+
     await this.setValue(code, rawValue);
   }
 
@@ -120,7 +121,7 @@ export class LightAccessory extends Accessory {
     const rawValue = this.getCodeValue(code);
     rawValue.s = s;
 
-    this.platform.log.debug('Set Saturation ' + value);
+    this.log('Set Saturation ' + value);
 
     // just set state
     // let Hue run the command
@@ -153,7 +154,7 @@ export class LightAccessory extends Accessory {
     const rawValue = this.getCodeValue(code);
     rawValue.h = h;
 
-    this.platform.log.debug('Set Hue ' + value);
+    this.log('Set Hue ' + value);
 
     // Check if white
     if (rawValue.h < 10 && rawValue.s < 10) {
@@ -195,7 +196,7 @@ export class LightAccessory extends Accessory {
     const values = this.getFunctionValues(code);
     const rawValue = Math.floor(values.max - (Math.min(((value - 140) / 360) * values.max, values.max)));
 
-    this.platform.log.debug('Set Temp ' + value);
+    this.log('Set Temp ' + value);
 
     // Switch to workmode white
     await this.setValues({ work_mode: 'white', [code]: rawValue });

@@ -24,6 +24,14 @@ export class Accessory {
     this.state = new Map();
   }
 
+  getName() {
+    return this.accessory.context.device.name;
+  }
+
+  log(message: string) {
+    this.platform.log.info('[' + this.getName() + ']', message);
+  }
+
   async initFunctions() {
     if (this.accessory.context.functions) {
       return;
