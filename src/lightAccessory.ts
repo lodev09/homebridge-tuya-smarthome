@@ -109,6 +109,24 @@ export class LightAccessory extends Accessory {
     return value;
   }
 
+  async setColourData(rawValue) {
+    // Check if white
+    if (rawValue.h < 10 && rawValue.s < 10) {
+      const brightValues = this.getFunctionValues('bright_value, bright_value_v2');
+      const tempValues = this.getFunctionValues('temp_value, temp_value_v2');
+
+      await this.setValues({
+        'work_mode': 'white',
+        'bright_value, bright_value_v2': brightValues.max,
+        'temp_value, temp_value_v2': tempValues.max,
+      });
+
+    } else {
+      const code = 'colour_data, colour_data_v2';
+      await this.setValues({ work_mode: 'colour', [code]: rawValue });
+    }
+  }
+
   async setSaturation(value: CharacteristicValue) {
     const code = 'colour_data, colour_data_v2';
     value = value as number;
@@ -122,11 +140,7 @@ export class LightAccessory extends Accessory {
     rawValue.s = s;
 
     this.log('Set Saturation ' + value);
-
-    // just set state
-    // let Hue run the command
-
-    await this.setValues({ work_mode: 'colour', [code]: rawValue }, false);
+    await this.setColourData(rawValue);
   }
 
   async getSaturation(): Promise<CharacteristicValue> {
@@ -155,21 +169,7 @@ export class LightAccessory extends Accessory {
     rawValue.h = h;
 
     this.log('Set Hue ' + value);
-
-    // Check if white
-    if (rawValue.h < 10 && rawValue.s < 10) {
-      const brightValues = this.getFunctionValues('bright_value, bright_value_v2');
-      const tempValues = this.getFunctionValues('temp_value, temp_value_v2');
-
-      await this.setValues({
-        'work_mode': 'white',
-        'bright_value, bright_value_v2': brightValues.max,
-        'temp_value, temp_value_v2': tempValues.max,
-      });
-
-    } else {
-      await this.setValues({ work_mode: 'colour', [code]: rawValue });
-    }
+    await this.setColourData(rawValue);
   }
 
   async getHue(): Promise<CharacteristicValue> {
