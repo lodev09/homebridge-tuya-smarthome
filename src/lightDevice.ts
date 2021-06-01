@@ -1,9 +1,9 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 
 import { Platform } from './platform';
-import { Accessory } from './accessory';
+import { Device } from './device';
 
-export class LightAccessory extends Accessory {
+export class LightDevice extends Device {
 
   constructor(platform: Platform, accessory: PlatformAccessory) {
     super(platform, accessory, platform.Service.Lightbulb);

@@ -1,7 +1,7 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { LightAccessory } from './lightAccessory';
+import { LightDevice } from './lightDevice';
 import { TuyaApi } from './tuyaApi.js';
 
 export class Platform implements DynamicPlatformPlugin {
@@ -49,7 +49,7 @@ export class Platform implements DynamicPlatformPlugin {
         // the accessory already exists
         this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
-        await this.createAccessory(device, existingAccessory);
+        await this.createDevice(device, existingAccessory);
         this.api.updatePlatformAccessories([existingAccessory]);
 
       } else {
@@ -59,7 +59,7 @@ export class Platform implements DynamicPlatformPlugin {
         const accessory = new this.api.platformAccessory(device.name, uuid);
 
         // Create the accessory and initialize functions
-        await this.createAccessory(device, accessory);
+        await this.createDevice(device, accessory);
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
@@ -67,7 +67,7 @@ export class Platform implements DynamicPlatformPlugin {
     }
   }
 
-  async createAccessory(device, accessory: PlatformAccessory) {
+  async createDevice(device, accessory: PlatformAccessory) {
     accessory.context.device = device;
 
     switch (device.category) {
@@ -75,8 +75,8 @@ export class Platform implements DynamicPlatformPlugin {
       case 'dd':
       case 'fwd': {
 
-        const lightAccessory = new LightAccessory(this, accessory);
-        await lightAccessory.init();
+        const lightDevice = new LightDevice(this, accessory);
+        await lightDevice.init();
 
         break;
       }

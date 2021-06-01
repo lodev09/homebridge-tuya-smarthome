@@ -2,10 +2,10 @@ import { Service, PlatformAccessory } from 'homebridge';
 
 import { Platform } from './platform';
 
-export class Accessory {
+export class Device {
 
   protected service: Service;
-  protected state;
+  protected data;
 
   constructor(protected readonly platform: Platform, protected readonly accessory: PlatformAccessory, service) {
     const device = accessory.context.device;
@@ -21,7 +21,7 @@ export class Accessory {
     // Set accessory name
     this.service.setCharacteristic(this.platform.Characteristic.Name, device.name);
 
-    this.state = new Map();
+    this.data = new Map();
   }
 
   getName() {
@@ -85,7 +85,7 @@ export class Accessory {
       }
     }
 
-    if (this.state.has(statusCode) === false) {
+    if (this.data.has(statusCode) === false) {
       // Initialize state from status
 
       let rawValue;
@@ -99,10 +99,10 @@ export class Accessory {
         rawValue = statusValue;
       }
 
-      this.state.set(statusCode, rawValue);
+      this.data.set(statusCode, rawValue);
     }
 
-    return this.state.get(statusCode);
+    return this.data.get(statusCode);
   }
 
   async setValues(codeValues, runCommand = true) {
@@ -119,7 +119,7 @@ export class Accessory {
           value: rawValue,
         });
 
-        this.state.set(func.code, rawValue);
+        this.data.set(func.code, rawValue);
       }
     }
 

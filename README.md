@@ -11,7 +11,7 @@ A slighlty better version of the [Official Tuya Homebridge](https://github.com/t
 **Note:** I use this for my personal setup but feel free to contribute :)
 
 ## Supported Devices
-- [Light](src/lightAccessory.ts)
+- [Light](src/lightDevice.ts)
 
 ## Installation
 
