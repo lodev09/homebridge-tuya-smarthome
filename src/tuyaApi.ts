@@ -34,12 +34,14 @@ export class TuyaApi {
       'schema' : options.schema,
     });
 
-    this.tokenInfo = {
-      access_token: result.access_token,
-      refresh_token: result.refresh_token,
-      uid: result.uid,
-      expire: (result.expire_time * 1000) + new Date().getTime(),
-    };
+    if (result) {
+      this.tokenInfo = {
+        access_token: result.access_token,
+        refresh_token: result.refresh_token,
+        uid: result.uid,
+        expire: (result.expire_time * 1000) + new Date().getTime(),
+      };
+    }
   }
 
   getSignature() {
