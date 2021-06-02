@@ -58,7 +58,7 @@ export class TuyaLink {
 
     for (const listener of this.listeners.values()) {
       if (this.config.source_topic.device === topic) {
-        this.platform.log.info('[LINK]', rawData);
+        this.platform.log.debug('[LINK]', rawData);
         await listener(data);
       }
     }
