@@ -26,14 +26,18 @@ export class TuyaApi {
   }
 
   async setTokenInfo(path = ''): Promise<boolean> {
+
+    // If requesting this method
+    // Avoid endless loop
     if (path === this.authPath) {
       return true;
     }
 
-    if ((this.tokenInfo.expire - 60) * 1000 > new Date().getTime()) {
+    if (this.tokenInfo.expire - 60 > new Date().getTime()) {
       return true;
     }
 
+    this.platform.log.info('Refreshing access token');
     const options = this.platform.config.options;
 
     const result = await this.post(this.authPath, {
@@ -80,8 +84,12 @@ export class TuyaApi {
 
     const requestHash = Crypto.SHA1(path + jsonParams + jsonBody).toString();
 
+    //
     // Avoid duplicate call
-    if (this.requestHash !== requestHash || path === this.authPath) {
+    // Call when previous result is empty (errored or new) or path is auth
+    //
+
+    if (this.requestHash !== requestHash || !this.requestResult || path === this.authPath) {
 
       // Store current request hash
       this.requestHash = requestHash;
@@ -118,14 +126,38 @@ export class TuyaApi {
         data: body,
       });
 
-      if (response.data) {
+      if (response && response.data) {
+        this.platform.log.info(logMethod + ' RESP:', JSON.stringify(response.data));
+
         if (response.data.success !== true) {
-          this.platform.log.error('ERR ' + response.data.code + ': ' + response.data.msg);
+          switch (response.data.code) {
+
+            // Token expired
+            case 1010: {
+
+              // If for some reason api thinks the toke has expired
+              // Try to renew
+
+              this.platform.log.warn('WARN ' + response.data.code + ': The token expired');
+              this.tokenInfo.expire = 0;
+
+              await this.setTokenInfo();
+              break;
+            }
+
+            default:
+              this.platform.log.error('ERR ' + response.data.code + ': ' + response.data.msg);
+              break;
+          }
+
           return;
         }
 
         // Store request if only successful
         this.requestResult = response.data.result;
+
+      } else {
+        this.platform.log.error(logMethod + ' RESP ERR:', response);
       }
     }
 
