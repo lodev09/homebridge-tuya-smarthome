@@ -19,8 +19,8 @@
   "scripts": {
     "lint": "eslint src/**.ts --max-warnings=0",
     "watch": "npm run build && npm link && nodemon",
-    "build": "npm run lint && rimraf ./dist && tsc && npm run hb",
-    "hb": "homebridge -I -D",
+    "build": "rimraf ./dist && tsc",
+    "hb": "npm run lint && npm run build && homebridge -I -D",
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
