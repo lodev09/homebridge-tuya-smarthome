@@ -81,7 +81,7 @@ export class TuyaApi {
     const requestHash = Crypto.SHA1(path + jsonParams + jsonBody).toString();
 
     // Avoid duplicate call
-    if (this.requestHash !== requestHash) {
+    if (this.requestHash !== requestHash || path === this.authPath) {
 
       // Store current request hash
       this.requestHash = requestHash;
