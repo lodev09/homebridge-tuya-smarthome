@@ -55,26 +55,32 @@ export class LightDevice extends Device {
     value = value as number;
 
     const workMode = this.getCodeValue('work_mode');
-    if (workMode === 'white') {
-      code = 'bright_value, bright_value_v2';
 
-      // Convert to raw
-      const values = this.getFunctionValues(code);
-      rawValue = Math.max(Math.min((value / 100) * values.max, values.max), values.min);
-
-    } else {
+    if (workMode === 'colour') {
       code = 'colour_data, colour_data_v2';
 
       // Convert to raw
       const func = this.getFunction(code);
       const max = func.code === 'colour_data' ? 255 : 1000;
-      const v = Math.min((value / 100) * max, max);
+      const min = func.code === 'colour_data' ? 25 : 10;
+
+      let v = ((value / 100) * (max - min)) + min;
+      v = Math.max(Math.min(Math.ceil(v), max), min);
 
       rawValue = this.getCodeValue(code);
       rawValue.v = v;
+
+    } else {
+      code = 'bright_value, bright_value_v2';
+
+      // Convert to raw
+      const values = this.getFunctionValues(code);
+
+      rawValue = ((value / 100) * (values.max - values.min)) + values.min;
+      rawValue = Math.max(Math.min(Math.ceil(rawValue), values.max), values.min);
     }
 
-    this.log('Set Brightness ' + value);
+    this.debug('Set Brightness ' + value);
 
     await this.setValue(code, rawValue);
   }
@@ -83,27 +89,38 @@ export class LightDevice extends Device {
     let value;
 
     const workMode = this.getCodeValue('work_mode');
-    if (workMode === 'white') {
+
+    if (workMode === 'colour') {
+      const code = 'colour_data, colour_data_v2';
+      const rawValue = this.getCodeValue(code);
+      if (typeof rawValue !== 'object') {
+        return 0;
+      }
+
+      const func = this.getFunction(code);
+      const max = func.code === 'colour_data' ? 255 : 1000;
+      const min = func.code === 'colour_data' ? 25 : 10;
+
+      // 0-100%
+      value = (rawValue.v - min) / (max - min);
+      value = Math.min(Math.ceil(value * 100), 100);
+
+      this.debug('Get Brightness (V): ' + value + ' (' + rawValue.v + '/' + max + ')');
+
+    } else {
+
       const code = 'bright_value, bright_value_v2';
       const rawValue = this.getCodeValue(code) as number;
 
       // Convert to percent
       const values = this.getFunctionValues(code);
-      value = Math.min((rawValue / values.max) * 100, 100);
 
-      this.log('Get Brightness: ' + value + ' (' + rawValue + ')');
+      // 0-100%
+      value = (rawValue - values.min) / (values.max - values.min);
+      value = Math.min(Math.ceil(value * 100), 100);
 
-    } else {
-      const code = 'colour_data, colour_data_v2';
-      const rawValue = this.getCodeValue(code);
+      this.debug('Get Brightness: ' + value + ' (' + rawValue + '/' + values.max + ')');
 
-      const func = this.getFunction(code);
-      const max = func.code === 'colour_data' ? 255 : 1000;
-
-      // max: 100%
-      value = Math.min((rawValue.v / max) * 100, 100);
-
-      this.log('Get Brightness (V): ' + value + ' (' + rawValue.v + ')');
     }
 
     return value;
@@ -111,7 +128,7 @@ export class LightDevice extends Device {
 
   async setColourData(rawValue) {
     // Check if white
-    if (rawValue.s < 10) {
+    if (rawValue.s < 50) {
       const brightValues = this.getFunctionValues('bright_value, bright_value_v2');
       const tempValues = this.getFunctionValues('temp_value, temp_value_v2');
 
@@ -134,12 +151,13 @@ export class LightDevice extends Device {
     // Convert to raw
     const func = this.getFunction(code);
     const max = func.code === 'colour_data' ? 255 : 1000;
-    const s = Math.min((value / 100) * max, max);
+    let s = (value / 100) * max;
+    s = Math.min(Math.ceil(s), max);
 
     const rawValue = this.getCodeValue(code);
     rawValue.s = s;
 
-    this.log('Set Saturation ' + value);
+    this.debug('Set Saturation ' + value);
     await this.setColourData(rawValue);
   }
 
@@ -147,13 +165,18 @@ export class LightDevice extends Device {
     const code = 'colour_data, colour_data_v2';
 
     const rawValue = this.getCodeValue(code);
+    if (typeof rawValue !== 'object') {
+      return 0;
+    }
 
     const func = this.getFunction(code);
     const max = func.code === 'colour_data' ? 255 : 1000;
 
     // max: 100%
-    const value = Math.min((rawValue.s / max) * 100, 100);
-    this.log('Get Saturation: ' + value + ' (' + rawValue.s + ')');
+    let value = (rawValue.s / max) * 100;
+    value = Math.min(Math.ceil(value), 100);
+
+    this.debug('Get Saturation: ' + value + ' (' + rawValue.s + '/' + max + ')');
 
     return value;
   }
@@ -162,22 +185,24 @@ export class LightDevice extends Device {
     const code = 'colour_data, colour_data_v2';
     value = value as number;
 
-    // Convert to raw
-    const h = Math.min((value / 360) * 360, 360);
-
+    // homekit hue = tuya hue (360)
     const rawValue = this.getCodeValue(code);
-    rawValue.h = h;
+    rawValue.h = value;
 
-    this.log('Set Hue ' + value);
+    this.debug('Set Hue ' + value);
     await this.setColourData(rawValue);
   }
 
   async getHue(): Promise<CharacteristicValue> {
     const rawValue = this.getCodeValue('colour_data, colour_data_v2');
+    if (typeof rawValue !== 'object') {
+      return 0;
+    }
 
-    // max: 360
-    const value = Math.min((rawValue.h / 360) * 360, 360);
-    this.log('Get Hue: ' + value + ' (' + rawValue.h + ')');
+    // homekit hue = tuya hue (360)
+    const value = rawValue.h;
+
+    this.debug('Get Hue: ' + value + ' (' + rawValue.h + '/360)');
 
     return value;
   }
@@ -194,9 +219,11 @@ export class LightDevice extends Device {
     //
 
     const values = this.getFunctionValues(code);
-    const rawValue = Math.floor(values.max - (Math.min(((value - 140) / 360) * values.max, values.max)));
 
-    this.log('Set Temp ' + value);
+    let rawValue = ((value / 360) * (values.max - values.min)) + values.min;
+    rawValue = Math.max(Math.min(Math.ceil(values.max - rawValue), values.max), values.min);
+
+    this.debug('Set Temp ' + value);
 
     // Switch to workmode white
     await this.setValues({ work_mode: 'white', [code]: rawValue });
@@ -213,8 +240,10 @@ export class LightDevice extends Device {
     // homekit value is opposite to tuya's value
     //
 
-    const value = Math.floor(Math.max(Math.min(500 - ((rawValue / values.max) * 360), 500), 140));
-    this.log('Get Temp: ' + value + ' (' + rawValue + ')');
+    let value = (rawValue - values.min) / (values.max - values.min);
+    value = Math.max(Math.min(Math.ceil(500 - (value * 360)), 500), 140);
+
+    this.debug('Get Temp: ' + value + ' (' + rawValue + '/' + values.max + ')');
 
     return value;
   }

@@ -7,38 +7,38 @@ export class Device {
   protected service: Service;
   protected data;
 
-  constructor(protected readonly platform: Platform, protected readonly accessory: PlatformAccessory, service) {
-    const device = accessory.context.device;
+  constructor(protected readonly platform: Platform, public readonly accessory: PlatformAccessory, service) {
+    const info = accessory.context.info;
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Tuya Lights')
-      .setCharacteristic(this.platform.Characteristic.Model, device.product_name)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, device.product_id);
+      .setCharacteristic(this.platform.Characteristic.Model, info.product_name)
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, info.product_id);
 
     this.service = this.accessory.getService(service) || this.accessory.addService(service);
 
     // Set accessory name
-    this.service.setCharacteristic(this.platform.Characteristic.Name, device.name);
+    this.service.setCharacteristic(this.platform.Characteristic.Name, info.name);
 
     this.data = new Map();
   }
 
   getName() {
-    return this.accessory.context.device.name;
+    return this.accessory.context.info.name;
   }
 
-  log(message: string) {
+  debug(message: string) {
     const name = '[' + this.getName() + ']';
     this.platform.log.debug(name, message);
   }
 
   async initFunctions() {
-    if (this.accessory.context.functions) {
-      return;
+    if (!this.accessory.context.functions) {
+      this.accessory.context.functions = await this.platform.tuyaApi.getDeviceFunctions(this.accessory.context.info.id);
     }
 
-    this.accessory.context.functions = await this.platform.tuyaApi.getDeviceFunctions(this.accessory.context.device.id);
+    this.debug('FUNCTIONS: ' + JSON.stringify(this.accessory.context.functions));
   }
 
   getFunction(code: string) {
@@ -76,7 +76,7 @@ export class Device {
     let statusValue;
 
     const codes = code.split(',').map(c => c.trim());
-    const status = this.accessory.context.device.status || [];
+    const status = this.accessory.context.info.status || [];
 
     for (const s of status) {
       if (codes.includes(s.code)) {
@@ -125,7 +125,7 @@ export class Device {
     }
 
     if (commands.length > 0 && runCommand === true) {
-      await this.platform.tuyaApi.runCommand(this.accessory.context.device.id, commands);
+      await this.platform.tuyaApi.runCommand(this.accessory.context.info.id, commands);
     }
   }
 
