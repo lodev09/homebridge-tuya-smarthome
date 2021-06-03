@@ -12,6 +12,10 @@ export class LightDevice extends Device {
   async init() {
     await this.initFunctions();
 
+    // Initialize identify event
+    this.accessory.on('identify', this.onIdentify.bind(this));
+
+    // Initialize characteristics
     this.initCharacteristic(
       this.platform.Characteristic.On,
       'switch_led',
@@ -46,6 +50,14 @@ export class LightDevice extends Device {
       this.setSaturation.bind(this),
       this.getSaturation.bind(this),
     );
+  }
+
+  async onIdentify(): Promise<void> {
+    this.debug('Identifying ' + this.getName());
+
+    // Turn and off
+    await this.setValues({ switch_led: true });
+    await this.setValues({ switch_led: false });
   }
 
   async setBrightness(value: CharacteristicValue) {

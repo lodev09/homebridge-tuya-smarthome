@@ -63,6 +63,7 @@ export class Platform implements DynamicPlatformPlugin {
 
       // Add accessories from cache instead
       for (const accessory of this.accessories.values()) {
+        accessory.reachable = false;
         await this.initDeviceAccessory(accessory.context.info, accessory);
       }
     }
