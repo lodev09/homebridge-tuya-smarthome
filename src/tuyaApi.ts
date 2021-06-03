@@ -154,8 +154,8 @@ export class TuyaApi {
   }
 
   async get(path, params = null) {
-    this.platform.log.info('[GET]', path);
-    this.platform.log.info('[GET] PARAMS:', JSON.stringify(params));
+    this.platform.log.debug('[GET]', path);
+    this.platform.log.debug('[GET] PARAMS:', JSON.stringify(params));
 
     if (this.isAuthenticated() === false) {
       this.platform.log.error('[GET] API is not authenticated');
@@ -166,8 +166,8 @@ export class TuyaApi {
   }
 
   async post(path, params) {
-    this.platform.log.info('[POST]', path);
-    this.platform.log.info('[POST] PARAMS:', JSON.stringify(params));
+    this.platform.log.debug('[POST]', path);
+    this.platform.log.debug('[POST] PARAMS:', JSON.stringify(params));
 
     if (this.isAuthenticated() === false) {
       this.platform.log.error('[GET] API is not authenticated');
