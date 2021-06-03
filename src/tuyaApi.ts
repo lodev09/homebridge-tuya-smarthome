@@ -7,9 +7,9 @@ import { Platform } from './platform';
 import { TuyaLink } from './tuyaLink';
 
 export class TuyaApi {
-  private authPath = '/v1.0/iot-01/associated-users/actions/authorized-login';
+  public link: TuyaLink;
 
-  private tokenInfo = {
+  private auth = {
     access_token: '',
     refresh_token: '',
     uid: '',
@@ -19,28 +19,26 @@ export class TuyaApi {
   private requestHash = '';
   private requestResult;
 
-  constructor(private readonly platform: Platform) { }
-
-  async initAuth() {
-    return await this.setTokenInfo();
+  constructor(private readonly platform: Platform) {
+    this.link = new TuyaLink(platform);
   }
 
-  async setTokenInfo(path = ''): Promise<boolean> {
+  isAuthenticated(): boolean {
+    return this.auth.uid !== ''
+      && this.auth.access_token !== ''
+      && this.auth.expire - 60 > new Date().getTime()
+    ;
+  }
 
-    // If requesting this method
-    // Avoid endless loop
-    if (path === this.authPath) {
+  async initAuth(): Promise<boolean> {
+    if (this.auth.expire - 60 > new Date().getTime()) {
       return true;
     }
 
-    if (this.tokenInfo.expire - 60 > new Date().getTime()) {
-      return true;
-    }
-
-    this.platform.log.info('Refreshing access token');
+    this.platform.log.info('Authenticating Tuya API');
     const options = this.platform.config.options;
 
-    const result = await this.post(this.authPath, {
+    const result = await this.request('post', '/v1.0/iot-01/associated-users/actions/authorized-login', null, {
       'country_code' : options.countryCode,
       'username': options.username,
       'password': Crypto.MD5(options.password).toString(),
@@ -48,12 +46,16 @@ export class TuyaApi {
     });
 
     if (result) {
-      this.tokenInfo = {
+
+      this.auth = {
         access_token: result.access_token,
         refresh_token: result.refresh_token,
         uid: result.uid,
         expire: (result.expire_time * 1000) + new Date().getTime(),
       };
+
+      // Refresh link
+      await this.initLink();
 
       return true;
     }
@@ -65,20 +67,13 @@ export class TuyaApi {
     const options = this.platform.config.options;
 
     const timestamp = new Date().getTime();
-    const message = options.clientId + this.tokenInfo.access_token + `${timestamp}`;
+    const message = options.clientId + this.auth.access_token + `${timestamp}`;
     const hash = Crypto.HmacSHA256(message, options.clientSecret);
 
     return hash.toString().toUpperCase();
   }
 
-  async request(method, path, params = null, body = null) {
-    await this.setTokenInfo(path);
-
-    if (path !== this.authPath && this.tokenInfo.access_token === '') {
-      this.platform.log.error('API is not authenticated');
-      return;
-    }
-
+  async request(method, path, params, body) {
     const jsonBody = JSON.stringify(body);
     const jsonParams = JSON.stringify(params);
 
@@ -89,20 +84,9 @@ export class TuyaApi {
     // Call when previous result is empty (errored or new) or path is auth
     //
 
-    if (this.requestHash !== requestHash || !this.requestResult || path === this.authPath) {
-
+    if (this.requestHash !== requestHash || !this.requestResult) {
       // Store current request hash
       this.requestHash = requestHash;
-
-      const logMethod = '[' + method.toUpperCase() + ']';
-      this.platform.log.info(logMethod + path);
-      if (body) {
-        this.platform.log.info(logMethod + ' BODY:', jsonBody);
-      }
-
-      if (params) {
-        this.platform.log.info(logMethod + ' PARAMS:', jsonParams);
-      }
 
       const options = this.platform.config.options;
       const headers = {
@@ -110,7 +94,7 @@ export class TuyaApi {
         'client_id': options.clientId,
         'sign': this.getSignature(),
         'sign_method': 'HMAC-SHA256',
-        'access_token': this.tokenInfo.access_token,
+        'access_token': this.auth.access_token,
         'lang': LANG,
         'dev_lang': 'javascript',
         'dev_channel': 'homebridge',
@@ -127,7 +111,7 @@ export class TuyaApi {
       });
 
       if (response && response.data) {
-        this.platform.log.info(logMethod + ' RESP:', JSON.stringify(response.data));
+        this.platform.log.debug('RESPONSE:', JSON.stringify(response.data));
 
         if (response.data.success !== true) {
           switch (response.data.code) {
@@ -136,12 +120,17 @@ export class TuyaApi {
             case 1010: {
 
               // If for some reason api thinks the toke has expired
-              // Try to renew
+              // Try to renew next time
 
               this.platform.log.warn('WARN ' + response.data.code + ': The token expired');
-              this.tokenInfo.expire = 0;
 
-              await this.setTokenInfo();
+              this.auth = {
+                access_token: '',
+                refresh_token: '',
+                uid: '',
+                expire: 0,
+              };
+
               break;
             }
 
@@ -157,7 +146,7 @@ export class TuyaApi {
         this.requestResult = response.data.result;
 
       } else {
-        this.platform.log.error(logMethod + ' RESP ERR:', response);
+        this.platform.log.error('RESPONSE ERR:', response);
       }
     }
 
@@ -165,10 +154,26 @@ export class TuyaApi {
   }
 
   async get(path, params = null) {
+    this.platform.log.info('[GET]', path);
+    this.platform.log.info('[GET] PARAMS:', JSON.stringify(params));
+
+    if (this.isAuthenticated() === false) {
+      this.platform.log.error('[GET] API is not authenticated');
+      await this.initAuth();
+    }
+
     return this.request('get', path, params, null);
   }
 
   async post(path, params) {
+    this.platform.log.info('[POST]', path);
+    this.platform.log.info('[POST] PARAMS:', JSON.stringify(params));
+
+    if (this.isAuthenticated() === false) {
+      this.platform.log.error('[GET] API is not authenticated');
+      await this.initAuth();
+    }
+
     return this.request('post', path, null, params);
   }
 
@@ -192,23 +197,20 @@ export class TuyaApi {
     return result;
   }
 
-  async getLink() {
-    if (this.tokenInfo.uid === '') {
-      this.platform.log.error('API is not authenticated');
+  async initLink() {
+    if (this.isAuthenticated() === false) {
+      this.platform.log.error('[LINK] API is not authenticated');
       return;
     }
 
-    const result = await this.post('/v1.0/iot-03/open-hub/access-config', {
-      'uid': this.tokenInfo.uid,
+    const config = await this.post('/v1.0/iot-03/open-hub/access-config', {
+      'uid': this.auth.uid,
       'link_id': uuidv1(),
       'link_type': LINK_TYPE,
       'topics': 'device',
       'msg_encrypted_version': '1.0',
     });
 
-    const link = new TuyaLink(this.platform, result);
-    await link.connect();
-
-    return link;
+    this.link.connect(config);
   }
 }

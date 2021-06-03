@@ -38,11 +38,8 @@ export class Platform implements DynamicPlatformPlugin {
   async discoverDevices() {
     const authenticated = await this.tuyaApi.initAuth();
     if (authenticated) {
-      // Init link (mqtt)
-      const link = await this.tuyaApi.getLink();
-      if (link) {
-        link.addListener(this.onLinkUpdate.bind(this));
-      }
+      // Subscribe to link (mqtt)
+      this.tuyaApi.link.addListener(this.onLinkUpdate.bind(this));
 
       const devices = await this.tuyaApi.getDevices();
       for (const deviceInfo of devices) {
@@ -66,7 +63,7 @@ export class Platform implements DynamicPlatformPlugin {
 
       // Add accessories from cache instead
       for (const accessory of this.accessories.values()) {
-        await this.initDeviceAccessory(accessory.context.device, accessory);
+        await this.initDeviceAccessory(accessory.context.info, accessory);
       }
     }
   }
