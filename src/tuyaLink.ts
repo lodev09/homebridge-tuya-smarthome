@@ -18,6 +18,13 @@ export class TuyaLink {
     this.platform.log.debug(name, message);
   }
 
+  disconnect() {
+    if (this.client && this.connected === true) {
+      this.connected = false;
+      this.client.end();
+    }
+  }
+
   connect(config) {
     if (!config) {
       this.platform.log.error('MQTT config is not valid');
@@ -26,9 +33,7 @@ export class TuyaLink {
 
     this.config = config;
 
-    if (this.client && this.connected === true) {
-      this.client.end();
-    }
+    this.disconnect();
 
     this.client = mqtt.connect(this.config.url, {
       clientId: this.config.client_id,
@@ -44,18 +49,18 @@ export class TuyaLink {
     });
 
     this.client.on('disconnect', () => {
-      this.connected = false;
       this.platform.log.info('[MQTT] disconnected');
+      this.disconnect();
     });
 
     this.client.on('offline', () => {
-      this.connected = false;
       this.platform.log.info('[MQTT] offline');
+      this.disconnect();
     });
 
     this.client.on('error', (err) => {
-      this.connected = false;
       this.platform.log.error('[MQTT] ERROR:', err);
+      this.disconnect();
     });
 
     this.client.on('end', () => {
